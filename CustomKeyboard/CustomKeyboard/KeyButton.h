@@ -7,8 +7,9 @@
 //
 
 #import <UIKit/UIKit.h>
-typedef  enum {
-    KeyTypeNum = 0,//数字
+typedef  NS_ENUM(NSInteger,KeyType) {
+    KeyTypeDefault = 0,
+    KeyTypeNum ,//数字
     KeyTypeLetter,//字母
     KeyTypeCancel,//取消
     KeyTypeDone,//完成
@@ -17,8 +18,11 @@ typedef  enum {
     KeyTypeDelete,//删除
     KeyTypeHidden,//隐藏键盘
     KeyTypeCaptain,//大写键
+    KeyTypeLowerCase,//大写键
+    KeyTypeTransToNum,//切换数字
+    KeyTypeTransToLetter,//切换字幕键盘
     
-}KeyType;
+};
 @interface KeyButton : UIButton
 @property (nonatomic, strong)NSString* value;
 @property (nonatomic, assign)KeyType type;

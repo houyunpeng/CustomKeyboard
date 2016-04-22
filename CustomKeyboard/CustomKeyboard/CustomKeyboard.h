@@ -20,6 +20,8 @@ typedef void (^InputCharactor)(NSString*inputStr);
 @property (nonatomic, assign)UITextField* textField;
 @property (nonatomic, assign)id delegate;
 
+@property (nonatomic, assign)UIKeyboardType keyboardType;
+
 -(instancetype)initKeyboard:(InputCharactor)callBack;
 -(instancetype)initKeyboard;
 @end

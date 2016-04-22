@@ -7,13 +7,19 @@
 //
 
 #import "CustomKeyboard.h"
+#import <objc/runtime.h>
+#define BLANKKEY                @" "
+#define CANCELKEY               @"CANCELKEY"
+#define DELETEKEY               @"DELETEKEY"
+#define DONEKEY                 @"DONEKEY"
+#define TRANSTONUMKEYBOARD      @"TRANSTONUMKEYBOARD"
+#define TRANSTOLETTERKEYBOARD   @"TRANSTOLETTERKEYBOARD"
+#define TRANSFORLETTERCAPTAIN   @"TRANSFORLETTERCAPTAIN"
+#define TRANSFORLETTERLOWERCASE   @"TRANSFORLETTERLOWERCASE"
 
-#define BLANKKEY @"BLANKKEY"
-#define CANCELKEY @"CANCELKEY"
-#define DELETEKEY @"DELETEKEY"
 
 
-#define keyboardHeight 240
+#define keyboardHeight 200
 #define keyboardWidth [UIScreen mainScreen].bounds.size.width
 
 @interface CustomKeyboard()
@@ -38,17 +44,52 @@
         self.center = CGPointMake(bounds.size.width/2, bounds.size.height - keyboardHeight/2);
         self.backgroundColor = [UIColor whiteColor];
         
-        [self initNumKeyboard];
+        
         
     }
     return self;
 }
+-(void)willMoveToSuperview:(UIView *)newSuperview
+{
+    if (!newSuperview) {
+        return;
+    }
+    [self.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    
+    switch (self.keyboardType) {
+        case UIKeyboardTypeDefault:
+        {
+            [self initASCIICapableKeyboardLowerKey];
+        }
+            break;
+        case UIKeyboardTypeASCIICapable://字母全键盘
+        {
+            [self initASCIICapableKeyboardLowerKey];
+        }
+            break;
+        case UIKeyboardTypeNumberPad:
+        {
+            [self initNumKeyboard];
+        }
+            break;
+        
+            
+        default:
+            break;
+    }
+    
+    
+}
 
 -(void)initNumKeyboard
 {
+    self.keyboardType = UIKeyboardTypeNumberPad;
     CGFloat cellWidth = keyboardWidth/3.0;
     CGFloat cellHeight = keyboardHeight/4.0;
-    NSMutableArray* numStrs = [self insertBlankKey:[self randomNumsArr:@[@"1",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"0"]]];
+//    NSMutableArray* numStrs = [self insertBlankKey:[self randomNumsArr:@[@"1",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"0"]]];
+//    NSMutableArray* numStrs = [self insertBlankKey:@[@"1",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"0"]];
+
+    NSMutableArray* numStrs = [self insertKey:TRANSTOLETTERKEYBOARD toArr:@[@"1",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"0"] atIndex:9];
     [numStrs addObject:DELETEKEY];
     for (int i = 0; i<numStrs.count; i++) {
         NSString* c = numStrs[i];
@@ -75,14 +116,148 @@
             keyBtn.type = KeyTypeDelete;
             keyBtn.value = @"";
         }
+        if ([c isEqualToString:TRANSTOLETTERKEYBOARD]) {
+            [keyBtn setTitle:@"ABC" forState:UIControlStateNormal];
+            keyBtn.type = KeyTypeTransToLetter;
+            keyBtn.value = TRANSTOLETTERKEYBOARD;
+        }
         
     }
     
     
 }
-
--(void)initLetterKeyboard
+-(void)initASCIICapableKeyboardCaptialKey
 {
+    self.keyboardType = UIKeyboardTypeASCIICapable;
+    NSDictionary* letterDic = @{@"1":@[@"Q",@"W",@"E",@"R",@"T",@"Y",@"U",@"I",@"O",@"P"],
+                                @"2":@[@"A",@"S",@"D",@"F",@"G",@"H",@"J",@"K",@"L"],
+                                @"3":@[TRANSFORLETTERLOWERCASE,@"Z",@"X",@"C",@"V",@"B",@"N",@"M",DELETEKEY],
+                                @"4":@[TRANSTONUMKEYBOARD,TRANSTOLETTERKEYBOARD,BLANKKEY,DONEKEY]};
+    [self initASCIICapableKeyboardWithKeysDic:letterDic];
+}
+-(void)initASCIICapableKeyboardLowerKey
+{
+
+    self.keyboardType = UIKeyboardTypeASCIICapable;
+    
+    NSDictionary* letterDic = @{@"1":@[@"q",@"w",@"e",@"r",@"t",@"y",@"u",@"i",@"o",@"p"],
+                                @"2":@[@"a",@"s",@"d",@"f",@"g",@"h",@"j",@"k",@"l"],
+                                @"3":@[TRANSFORLETTERCAPTAIN,@"z",@"x",@"c",@"v",@"b",@"n",@"m",DELETEKEY],
+                                @"4":@[TRANSTONUMKEYBOARD,TRANSTOLETTERKEYBOARD,BLANKKEY,DONEKEY]};
+    [self initASCIICapableKeyboardWithKeysDic:letterDic];
+}
+-(void)initASCIICapableKeyboardWithKeysDic:(NSDictionary*)letterDic{
+    NSArray* lines = @[@"1",@"2",@"3",@"4"];
+    CGFloat cellKeyWidth = 0;
+    CGFloat cellKeyHeight = 0;
+    CGFloat gapWidth = 0;
+    gapWidth = keyboardWidth/(7*10 + 1);
+    cellKeyWidth = 6* gapWidth;
+    cellKeyHeight = (keyboardHeight - 5.5*gapWidth)/lines.count;
+    for (int i = 0;i<lines.count;i++) {
+        NSString* line = lines[i];
+        NSInteger lineInt = [line integerValue];
+        
+        NSArray* keys = letterDic[line];
+        
+
+        switch (lineInt) {
+            case 1:
+            case 2:
+            {
+                for (int i = 0;i<keys.count ; i++) {
+                    KeyButton* keyBtn = [KeyButton buttonWithType:UIButtonTypeSystem];
+                    [keyBtn setTintColor:[UIColor blackColor]];
+                    keyBtn.backgroundColor = [UIColor colorWithRed:246/255.0 green:246/255.0 blue:246/255.0 alpha:1];
+                    keyBtn.titleLabel.font = [UIFont boldSystemFontOfSize:18];
+                    [keyBtn setTitle:[letterDic[line] objectAtIndex:i] forState:UIControlStateNormal];
+                    keyBtn.frame = CGRectMake(gapWidth+ (cellKeyWidth + gapWidth)*i + (lineInt - 1)*0.5*cellKeyWidth, gapWidth+(cellKeyHeight + 1.5*gapWidth)*(lineInt-1), cellKeyWidth, cellKeyHeight);
+                    [keyBtn addTarget:self action:@selector(keyActions:) forControlEvents:UIControlEventTouchUpInside];
+                    [self addSubview:keyBtn];
+                    keyBtn.type = KeyTypeLetter;
+                    keyBtn.value = [letterDic[line] objectAtIndex:i];
+                }
+            }
+                break;
+            case 3:{
+                for (int i = 0;i<keys.count ; i++) {
+                    KeyButton* keyBtn = [KeyButton buttonWithType:UIButtonTypeSystem];
+                    [keyBtn setTintColor:[UIColor blackColor]];
+                    keyBtn.backgroundColor = [UIColor colorWithRed:246/255.0 green:246/255.0 blue:246/255.0 alpha:1];
+                    keyBtn.titleLabel.font = [UIFont boldSystemFontOfSize:18];
+                    
+                    [keyBtn addTarget:self action:@selector(keyActions:) forControlEvents:UIControlEventTouchUpInside];
+                    [self addSubview:keyBtn];
+                    if ([keys[i] isEqualToString:TRANSFORLETTERLOWERCASE]) {
+                        [keyBtn setTitle:@"CAP" forState:UIControlStateNormal];
+                        keyBtn.frame = CGRectMake(gapWidth+ (cellKeyWidth + gapWidth)*i, gapWidth+(cellKeyHeight + 1.5*gapWidth)*(lineInt-1), cellKeyWidth*1.2, cellKeyHeight);
+                        keyBtn.type = KeyTypeLowerCase;
+                        keyBtn.value = [letterDic[line] objectAtIndex:i];
+                    }else if ([keys[i] isEqualToString:TRANSFORLETTERCAPTAIN]) {
+                        [keyBtn setTitle:@"CAP" forState:UIControlStateNormal];
+                        keyBtn.frame = CGRectMake(gapWidth+ (cellKeyWidth + gapWidth)*i, gapWidth+(cellKeyHeight + 1.5*gapWidth)*(lineInt-1), cellKeyWidth*1.2, cellKeyHeight);
+                        keyBtn.type = KeyTypeCaptain;
+                        keyBtn.value = [letterDic[line] objectAtIndex:i];
+                    }else if(i == keys.count-1){
+                        [keyBtn setTitle:@"DEL" forState:UIControlStateNormal];
+                        keyBtn.frame = CGRectMake(gapWidth+ (cellKeyWidth + gapWidth)*i + 0.5*cellKeyWidth, gapWidth+(cellKeyHeight + 1.5*gapWidth)*(lineInt-1), cellKeyWidth*1.5, cellKeyHeight);
+                        keyBtn.type = KeyTypeDelete;
+                        keyBtn.value = [letterDic[line] objectAtIndex:i];
+                    }else{
+                        [keyBtn setTitle:[letterDic[line] objectAtIndex:i] forState:UIControlStateNormal];
+                        keyBtn.frame = CGRectMake(gapWidth+ (cellKeyWidth + gapWidth)*i + 0.5*cellKeyWidth, gapWidth+(cellKeyHeight + 1.5*gapWidth)*(lineInt-1), cellKeyWidth, cellKeyHeight);
+                        keyBtn.type = KeyTypeLetter;
+                        keyBtn.value = [letterDic[line] objectAtIndex:i];
+                    }
+                    
+                }
+            }
+                break;
+            case 4:{
+                for (int i = 0;i<keys.count ; i++) {
+                    KeyButton* keyBtn = [KeyButton buttonWithType:UIButtonTypeSystem];
+                    [keyBtn setTintColor:[UIColor blackColor]];
+                    keyBtn.backgroundColor = [UIColor colorWithRed:246/255.0 green:246/255.0 blue:246/255.0 alpha:1];
+                    keyBtn.titleLabel.font = [UIFont boldSystemFontOfSize:18];
+                    
+                    [keyBtn addTarget:self action:@selector(keyActions:) forControlEvents:UIControlEventTouchUpInside];
+                    [self addSubview:keyBtn];
+                    NSString* keyFuncName = keys[i];
+                    if ([keyFuncName isEqualToString:TRANSTOLETTERKEYBOARD]) {
+                        [keyBtn setTitle:@"@" forState:UIControlStateNormal];
+                        keyBtn.frame = CGRectMake(gapWidth+ cellKeyWidth*1.2 + gapWidth, gapWidth+(cellKeyHeight + 1.5*gapWidth)*(lineInt-1), cellKeyWidth*1.2, cellKeyHeight);
+                        keyBtn.type = KeyTypeSymbol;
+                        keyBtn.value = [letterDic[line] objectAtIndex:i];
+                    }else if([keyFuncName isEqualToString:TRANSTONUMKEYBOARD]){
+                        [keyBtn setTitle:@"123" forState:UIControlStateNormal];
+                        keyBtn.frame = CGRectMake(gapWidth, gapWidth+(cellKeyHeight + 1.5*gapWidth)*(lineInt-1), cellKeyWidth*1.2, cellKeyHeight);
+                        keyBtn.type = KeyTypeTransToNum;
+                        keyBtn.value = [letterDic[line] objectAtIndex:i];
+                    }else if([keyFuncName isEqualToString:BLANKKEY]){
+                        [keyBtn setTitle:@"空格" forState:UIControlStateNormal];
+                        keyBtn.frame = CGRectMake(gapWidth+ (cellKeyWidth*1.2 + gapWidth)*i, gapWidth+(cellKeyHeight + 1.5*gapWidth)*(lineInt-1), cellKeyWidth*5 + gapWidth*4, cellKeyHeight);
+                        keyBtn.type = KeyTypeBlankKey;
+                        keyBtn.value = [letterDic[line] objectAtIndex:i];
+                    }else if([keyFuncName isEqualToString:DONEKEY]){
+                        [keyBtn setTitle:@"DONE" forState:UIControlStateNormal];
+                        keyBtn.frame = CGRectMake(gapWidth+ (cellKeyWidth + gapWidth)*7 + 0.5*cellKeyWidth, gapWidth+(cellKeyHeight + 1.5*gapWidth)*(lineInt-1), keyboardWidth - (gapWidth+ (cellKeyWidth + gapWidth)*7 + 0.5*cellKeyWidth) - gapWidth, cellKeyHeight);
+                        keyBtn.type = KeyTypeDone;
+                        keyBtn.value = [letterDic[line] objectAtIndex:i];
+                    }
+                    
+                }
+            }
+                break;
+                
+            default:
+                break;
+        }
+        
+       
+        
+        
+        
+    }
     
 }
 
@@ -104,6 +279,7 @@
         BOOL b = [self.delegate textField:_textField shouldChangeCharactersInRange:currentRange replacementString:keyBtn.value];
         if (b) {
             switch (keyBtn.type) {
+                case KeyTypeBlankKey:
                 case KeyTypeLetter:
                 case KeyTypeNum:
                 {
@@ -141,6 +317,25 @@
                     [_textField setSelectedTextRange:selectionRange];
                 }
                     break;
+                    case KeyTypeTransToNum:
+                {
+                    [self.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+                    [self initNumKeyboard];
+                }
+                    break;
+                case KeyTypeLowerCase:
+                case KeyTypeTransToLetter:
+                {
+                    [self.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+                    [self initASCIICapableKeyboardLowerKey];
+                }
+                    break;
+                case KeyTypeCaptain:
+                {
+                    [self.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+                    [self initASCIICapableKeyboardCaptialKey];
+                }
+                    break;
                     
                 default:
                     break;
@@ -171,6 +366,12 @@
     return resultNums;
 }
 
+-(NSMutableArray*)insertKey:(NSString*)key toArr:(NSArray*)arr atIndex:(NSInteger)index
+{
+    NSMutableArray* resultNums = [NSMutableArray arrayWithArray:arr];
+    [resultNums insertObject:key atIndex:index];
+    return resultNums;
+}
 
 /*
 // Only override drawRect: if you perform custom drawing.
