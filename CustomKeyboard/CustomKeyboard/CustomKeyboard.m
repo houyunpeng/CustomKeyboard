@@ -51,6 +51,7 @@
 }
 -(void)willMoveToSuperview:(UIView *)newSuperview
 {
+    [super willMoveToSuperview:newSuperview];
     if (!newSuperview) {
         return;
     }
@@ -98,9 +99,7 @@
             continue;
 
         }
-        
-        
-        
+
         KeyButton* keyBtn = [KeyButton buttonWithType:UIButtonTypeSystem];
         [keyBtn setTintColor:[UIColor blackColor]];
         keyBtn.backgroundColor = [UIColor colorWithRed:246/255.0 green:246/255.0 blue:246/255.0 alpha:1];
